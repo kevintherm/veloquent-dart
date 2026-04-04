@@ -94,6 +94,36 @@ await sdk.realtime.subscribe('posts', (event, payload) {
 });
 ```
 
+## Tests
+
+Run the unit test suite with:
+
+```bash
+flutter test test/auth_test.dart test/realtime_test.dart test/records_test.dart
+```
+
+Run integration tests against a live Veloquent server with:
+
+```bash
+export RUN_INTEGRATION_TESTS=true
+export VELOQUENT_API_URL=http://localhost:80
+flutter test test/integration_test.dart test/integration_realtime_test.dart
+```
+
+> Note: `integration_realtime_test.dart` currently uses a mock realtime adapter to validate SDK orchestration. A full native Flutter realtime end-to-end test should be added later.
+
+## Contributing
+
+Contributions are welcome. Please open issues or pull requests for bug fixes, improvements, or new features. When contributing:
+
+- Keep changes small and focused.
+- Add tests for new behavior.
+- Follow the existing Dart style and naming conventions.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
 ## Additional information
 
 This SDK is designed for Flutter applications. Non-Flutter Dart targets are not officially supported for real-time features.
