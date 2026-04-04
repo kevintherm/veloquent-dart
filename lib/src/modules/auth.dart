@@ -1,5 +1,4 @@
 import '../core/request.dart';
-import '../models/request_result.dart';
 
 class Auth {
   Auth(this.requestHelper);

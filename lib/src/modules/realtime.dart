@@ -22,13 +22,10 @@ class _ActiveChannel {
 }
 
 class Realtime {
-  Realtime(this.requestHelper, this._adapter);
+  Realtime(this.requestHelper, this.adapter);
 
   final RequestHelper requestHelper;
-  RealtimeAdapter? _adapter;
-
-  RealtimeAdapter? get adapter => _adapter;
-  set adapter(RealtimeAdapter? value) => _adapter = value;
+  RealtimeAdapter? adapter;
 
   Duration heartbeatInterval = const Duration(seconds: 30);
   final Map<String, _ActiveChannel> _activeChannels = <String, _ActiveChannel>{};

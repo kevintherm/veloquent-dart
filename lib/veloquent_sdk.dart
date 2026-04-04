@@ -1,5 +1,3 @@
-library veloquent_sdk;
-
 export 'src/core/client.dart';
 export 'src/core/config.dart';
 export 'src/errors/sdk_error.dart';
