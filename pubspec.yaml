@@ -1,7 +1,11 @@
 name: veloquent_sdk
 description: Flutter SDK for Veloquent BaaS with auth, records, collections, schema, onboarding, and realtime support.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/kevintherm/veloquent-dart
+topics:
+  - veloquent
+  - sdk
+  - laravel
 
 environment:
   sdk: ^3.10.4
