@@ -6,8 +6,6 @@
 
 ## Record & Data Handling
 - [ ] **Automatic Date Parsing**: Consider converting ISO strings in `Record` (like `created_at`) to `DateTime` objects automatically in the `Record` class.
-- [ ] **Strong Typing**: Explore creating a code generator (like `json_serializable` or a custom CLI) to generate specific Record subclasses from the Veloquent Schema.
 
-## General
-- [ ] **Middleware Support**: Add ability to register global request/response interceptors.
-- [ ] **Offline Persistence**: Implement a `SQLiteStorageAdapter` for more robust offline caching in Flutter applications.
+## Low Priority
+- [ ] Change email and change password requests.

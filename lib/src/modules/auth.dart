@@ -6,11 +6,11 @@ class Auth {
   final RequestHelper requestHelper;
 
   Future<Map<String, dynamic>> login(
-      String collection, String email, String password) async {
+      String collection, String identity, String password) async {
     final result = await requestHelper.execute(
       method: 'POST',
       path: '/collections/$collection/auth/login',
-      body: {'email': email, 'password': password},
+      body: {'identity': identity, 'password': password},
     );
 
     final data = Map<String, dynamic>.from(result.data);
