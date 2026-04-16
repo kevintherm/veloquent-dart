@@ -13,3 +13,7 @@
 ## 1.1.0
 
 - Add support for multipart/form-data file uploads in records module.
+
+## 1.1.1
+
+- Update installation docs
