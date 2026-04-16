@@ -115,5 +115,112 @@ void main() {
       expect(req?['method'], 'DELETE');
       expect(req?['url'], 'http://localhost:3000/api/collections/posts/records/rec-123');
     });
+
+    // ── File upload ─────────────────────────────────────────────────
+
+    test('create with FileUpload sends multipart request', () async {
+      httpAdapter.mockResponse(201, {
+        'message': 'Created',
+        'data': {'id': 'rec-new', 'name': 'Kevin'},
+      });
+
+      final upload = FileUpload(
+        bytes: [1, 2, 3],
+        filename: 'avatar.jpg',
+        mimeType: 'image/jpeg',
+      );
+
+      await sdk.records.create('users', {'name': 'Kevin', 'avatar': upload});
+
+      final req = httpAdapter.lastRequest;
+      expect(req?['method'], 'POST');
+      // When multipart, the adapter records body as a MultipartRequest marker
+      expect(req?['isMultipart'], isTrue);
+      expect(req?['fields']?['name'], 'Kevin');
+      final files = req?['files'] as List?;
+      expect(files, isNotNull);
+      expect(files!.any((f) => f['field'] == 'avatar' && f['filename'] == 'avatar.jpg'), isTrue);
+    });
+
+    test('create with list of FileUploads sends multipart request', () async {
+      httpAdapter.mockResponse(201, {
+        'message': 'Created',
+        'data': {'id': 'rec-new'},
+      });
+
+      final upload1 = FileUpload(bytes: [1], filename: 'a.jpg', mimeType: 'image/jpeg');
+      final upload2 = FileUpload(bytes: [2], filename: 'b.jpg', mimeType: 'image/jpeg');
+
+      await sdk.records.create('posts', {
+        'title': 'My Trip',
+        'gallery': [upload1, upload2],
+      });
+
+      final req = httpAdapter.lastRequest;
+      expect(req?['isMultipart'], isTrue);
+      final files = req?['files'] as List?;
+      expect(files!.where((f) => f['field'] == 'gallery').length, 2);
+    });
+
+    test('create with plain data sends JSON (no multipart)', () async {
+      httpAdapter.mockResponse(201, {
+        'message': 'Created',
+        'data': {'id': 'rec-new', 'title': 'Hello'},
+      });
+
+      await sdk.records.create('posts', {'title': 'Hello', 'status': 'draft'});
+
+      final req = httpAdapter.lastRequest;
+      expect(req?['isMultipart'], isNot(isTrue));
+      expect(req?['body'], {'title': 'Hello', 'status': 'draft'});
+    });
+
+    test('update with FileUpload sends multipart PATCH', () async {
+      httpAdapter.mockResponse(200, {
+        'message': 'Updated',
+        'data': {'id': 'rec-1'},
+      });
+
+      final upload = FileUpload(bytes: [9], filename: 'new.png', mimeType: 'image/png');
+
+      await sdk.records.update('users', 'rec-1', {'avatar': upload});
+
+      final req = httpAdapter.lastRequest;
+      expect(req?['method'], 'PATCH');
+      expect(req?['isMultipart'], isTrue);
+      final files = req?['files'] as List?;
+      expect(files!.any((f) => f['field'] == 'avatar' && f['filename'] == 'new.png'), isTrue);
+    });
+
+    test('update with "fieldName+" appends files in multipart', () async {
+      httpAdapter.mockResponse(200, {
+        'message': 'Updated',
+        'data': {'id': 'rec-1'},
+      });
+
+      final upload = FileUpload(bytes: [5], filename: 'extra.jpg', mimeType: 'image/jpeg');
+
+      await sdk.records.update('posts', 'rec-1', {'gallery+': [upload]});
+
+      final req = httpAdapter.lastRequest;
+      expect(req?['isMultipart'], isTrue);
+      final files = req?['files'] as List?;
+      expect(files!.any((f) => f['field'] == 'gallery+'), isTrue);
+    });
+
+    test('update with "fieldName-" remove selector sends JSON', () async {
+      httpAdapter.mockResponse(200, {
+        'message': 'Updated',
+        'data': {'id': 'rec-1'},
+      });
+
+      await sdk.records.update('posts', 'rec-1', {
+        'gallery-': [{'path': 'collections/posts/abc.jpg'}],
+      });
+
+      final req = httpAdapter.lastRequest;
+      // No FileUploads — must send as plain JSON
+      expect(req?['isMultipart'], isNot(isTrue));
+    });
   });
 }

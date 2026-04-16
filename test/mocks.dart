@@ -1,12 +1,21 @@
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:veloquent_sdk/veloquent_sdk.dart';
 
-class MockHttpAdapter implements HttpAdapter {
+/// Test double for [FetchAdapter] that records all requests without making
+/// real network calls. Supports both JSON and multipart requests.
+///
+/// Extends [FetchAdapter] so that [FetchAdapter.request] handles the routing
+/// (detecting [FileUpload] values and choosing JSON vs multipart). Only the
+/// two leaf dispatch methods are overridden here to capture calls without I/O.
+class MockHttpAdapter extends FetchAdapter {
+  MockHttpAdapter() : super();
+
   final List<Map<String, dynamic>> requests = [];
-  final List<HttpResponse> responses = [];
+  final List<HttpResponse> _responses = [];
 
   void mockResponse(int status, Map<String, dynamic> data) {
-    responses.add(HttpResponse(
+    _responses.add(HttpResponse(
       status: status,
       statusText: status == 200 ? 'OK' : 'Error',
       headers: {'content-type': 'application/json'},
@@ -14,25 +23,59 @@ class MockHttpAdapter implements HttpAdapter {
     ));
   }
 
+  HttpResponse _nextResponse() {
+    if (_responses.isNotEmpty) return _responses.removeAt(0);
+    return HttpResponse(
+      status: 200,
+      statusText: 'OK',
+      headers: {'content-type': 'application/json'},
+      data: {'message': 'OK', 'data': {}},
+    );
+  }
+
+  /// Intercepts normal (JSON) requests — called by [FetchAdapter.request]
+  /// after detecting no [FileUpload] values in the body.
   @override
-  Future<HttpResponse> request(HttpRequest req) async {
+  Future<HttpResponse> sendJsonRequest({
+    required String method,
+    required Uri uri,
+    required Object? encodedBody,
+    required Map<String, String> headers,
+    required Duration timeout,
+    dynamic originalBody,
+  }) async {
     requests.add({
-      'method': req.method,
-      'url': req.url,
-      'headers': req.headers,
-      'body': (req.body != null && req.body is String) ? json.decode(req.body as String) : req.body,
+      'method': method,
+      'url': uri.toString(),
+      'headers': headers,
+      'body': originalBody is String ? json.decode(originalBody) : originalBody,
+      'isMultipart': false,
     });
 
-    if (responses.isEmpty) {
-      return HttpResponse(
-        status: 200,
-        statusText: 'OK',
-        headers: {'content-type': 'application/json'},
-        data: {'message': 'OK', 'data': {}},
-      );
-    }
+    return _nextResponse();
+  }
 
-    return responses.removeAt(0);
+  /// Intercepts multipart requests — records metadata without network I/O.
+  @override
+  Future<HttpResponse> sendMultipartRequest({
+    required String method,
+    required Uri uri,
+    required http.MultipartRequest multipartRequest,
+    required Map<String, String> fields,
+    required List<Map<String, dynamic>> files,
+    required Map<String, String> headers,
+    required Duration timeout,
+  }) async {
+    requests.add({
+      'method': method,
+      'url': uri.toString(),
+      'headers': headers,
+      'isMultipart': true,
+      'fields': fields,
+      'files': files,
+    });
+
+    return _nextResponse();
   }
 
   Map<String, dynamic>? get lastRequest => requests.isNotEmpty ? requests.last : null;

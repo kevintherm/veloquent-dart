@@ -2,6 +2,19 @@
 
 A Flutter SDK for Veloquent BaaS, providing a high-level API for authentication, record management, collections, schema management, and real-time updates.
 
+## Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Usage](#usage)
+  - [Authentication](#authentication)
+  - [CRUD Operations](#crud-operations)
+  - [File Uploads](#file-uploads)
+  - [Real-time Subscriptions](#real-time-subscriptions)
+- [Tests](#tests)
+- [Contributing](#contributing)
+
 ## Features
 
 - **Authentication**: Login, identity impersonation, logout, and session management.
@@ -53,15 +66,124 @@ final profile = await sdk.auth.me('users');
 
 ```dart
 // List records with filters
-final posts = await sdk.records.list('posts', 
-  filter: 'status = "published"', 
-  sort: '-created_at'
+final result = await sdk.records.list('posts',
+  filter: 'status = "published"',
+  sort: '-created_at',
+  perPage: 25,
+  page: 1,
+  expand: 'authorId',
 );
+
+print(result.data);     // List<Record>
+print(result.meta);     // {current_page: 1, total: 42, ...}
+
+// Get a single record
+final post = await sdk.records.get('posts', 'rec-123', expand: 'authorId');
+print(post.get('title'));
 
 // Create a record
 final newPost = await sdk.records.create('posts', {
   'title': 'Hello World',
   'content': 'This is my first post',
+});
+print(newPost.id);
+
+// Update a record
+final updated = await sdk.records.update('posts', newPost.id, {'status': 'published'});
+
+// Delete a record
+await sdk.records.delete('posts', newPost.id);
+```
+
+### File Uploads
+
+For collection fields of type `file`, pass a `FileUpload` object anywhere in the data map.
+The SDK automatically sends the request as `multipart/form-data`, no extra setup needed.
+`FileUpload` is exported from the top-level `veloquent_sdk` package.
+
+#### Create a record with a file
+
+```dart
+final upload = FileUpload(
+  bytes: imageBytes,         // List<int>
+  filename: 'avatar.jpg',
+  mimeType: 'image/jpeg',
+);
+
+final user = await sdk.records.create('users', {
+  'name': 'Kevin',
+  'avatar': upload,          // SDK detects FileUpload and sends multipart
+});
+```
+
+#### Flutter — using `image_picker`
+
+```dart
+import 'package:image_picker/image_picker.dart';
+import 'package:mime/mime.dart';
+
+final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+if (picked == null) return;
+
+final upload = FileUpload(
+  bytes: await picked.readAsBytes(),
+  filename: picked.name,
+  mimeType: lookupMimeType(picked.name) ?? 'application/octet-stream',
+);
+
+await sdk.records.create('photos', {'title': 'Sunset', 'image': upload});
+```
+
+#### Create with multiple files
+
+```dart
+await sdk.records.create('posts', {
+  'title': 'My Trip',
+  'gallery': [upload1, upload2],   // List<FileUpload>
+});
+```
+
+#### Update / replace a file
+
+```dart
+await sdk.records.update('users', userId, {
+  'avatar': FileUpload(bytes: newBytes, filename: 'new.jpg', mimeType: 'image/jpeg'),
+});
+```
+
+#### Update / append files to a multi-file field
+
+Suffix the field name with `+` to add files **without** replacing existing ones:
+
+```dart
+await sdk.records.update('posts', postId, {
+  'gallery+': [newUpload1, newUpload2],
+});
+```
+
+#### Update / remove specific files
+
+Suffix the field name with `-` and pass a path or metadata selector:
+
+```dart
+// The path comes from the file metadata returned by the API
+await sdk.records.update('posts', postId, {
+  'gallery-': [{'path': 'collections/posts/abc123.jpg'}],
+});
+```
+
+#### File field response shape
+
+File fields are returned as a list of metadata maps:
+
+```dart
+final post = await sdk.records.get('posts', postId);
+final gallery = post.get('gallery') as List?; // [{name, path, size, extension, mime}, ...]
+
+// To remove by path:
+final path = (gallery?.first as Map)['path'];
+await sdk.records.update('posts', postId, {
+  'gallery-': [{'path': path}],
 });
 ```
 

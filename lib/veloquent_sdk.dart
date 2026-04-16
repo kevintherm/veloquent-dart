@@ -11,3 +11,4 @@ export 'src/adapters/realtime/pusher_channels_adapter.dart';
 export 'src/models/record.dart';
 export 'src/models/records_list_result.dart';
 export 'src/models/request_result.dart';
+export 'src/models/file_upload.dart';

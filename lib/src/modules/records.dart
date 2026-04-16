@@ -1,4 +1,5 @@
 import '../core/request.dart';
+import '../models/file_upload.dart';
 import '../models/record.dart';
 import '../models/records_list_result.dart';
 
@@ -33,8 +34,32 @@ class Records {
     return RecordsListResult(data: data, meta: result.meta);
   }
 
-  Future<Record> create(
-      String collection, Map<String, dynamic> data) async {
+  /// Create a new record in a collection.
+  ///
+  /// If [data] contains any [FileUpload] values, the request is automatically
+  /// sent as `multipart/form-data`. Otherwise it is sent as JSON.
+  ///
+  /// ```dart
+  /// // Plain JSON
+  /// await sdk.records.create('posts', {'title': 'Hello'});
+  ///
+  /// // With a file
+  /// await sdk.records.create('users', {
+  ///   'name': 'avatar',
+  ///   'avatar': FileUpload(
+  ///     bytes: imageBytes,
+  ///     filename: 'avatar.jpg',
+  ///     mimeType: 'image/jpeg',
+  ///   ),
+  /// });
+  ///
+  /// // With multiple files
+  /// await sdk.records.create('posts', {
+  ///   'title': 'My Trip',
+  ///   'gallery': [upload1, upload2],
+  /// });
+  /// ```
+  Future<Record> create(String collection, Map<String, dynamic> data) async {
     final result = await requestHelper.execute(
       method: 'POST',
       path: '/collections/$collection/records',
@@ -44,8 +69,7 @@ class Records {
     return Record(collection, Map<String, dynamic>.from(result.data));
   }
 
-  Future<Record> get(String collection, String id,
-      {String? expand}) async {
+  Future<Record> get(String collection, String id, {String? expand}) async {
     final query = <String, dynamic>{};
     if (expand != null) query['expand'] = expand;
 
@@ -58,8 +82,31 @@ class Records {
     return Record(collection, Map<String, dynamic>.from(result.data));
   }
 
-  Future<Record> update(
-      String collection, String id, Map<String, dynamic> data) async {
+  /// Update a record.
+  ///
+  /// If [data] contains any [FileUpload] values, the request is automatically
+  /// sent as `multipart/form-data`.
+  ///
+  /// For fields that allow multiple files you can use the `+` and `-` key
+  /// suffixes to append or remove files without replacing the entire field:
+  ///
+  /// ```dart
+  /// // Replace the avatar
+  /// await sdk.records.update('users', id, {
+  ///   'avatar': FileUpload(bytes: bytes, filename: 'new.jpg', mimeType: 'image/jpeg'),
+  /// });
+  ///
+  /// // Append to a multi-file gallery
+  /// await sdk.records.update('posts', id, {
+  ///   'gallery+': [FileUpload(bytes: bytes, filename: 'extra.jpg', mimeType: 'image/jpeg')],
+  /// });
+  ///
+  /// // Remove a file by its stored path
+  /// await sdk.records.update('posts', id, {
+  ///   'gallery-': [{'path': 'collections/posts/abc.jpg'}],
+  /// });
+  /// ```
+  Future<Record> update(String collection, String id, Map<String, dynamic> data) async {
     final result = await requestHelper.execute(
       method: 'PATCH',
       path: '/collections/$collection/records/$id',

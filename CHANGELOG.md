@@ -9,3 +9,7 @@
 ## 1.0.2
 
 - Fix auth.login module, change email field to identity.
+
+## 1.1.0
+
+- Add support for multipart/form-data file uploads in records module.
