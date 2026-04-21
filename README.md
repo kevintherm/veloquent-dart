@@ -26,20 +26,7 @@ A Flutter SDK for Veloquent BaaS, providing a high-level API for authentication,
 
 ## Installation
 
-Add `veloquent_sdk` to your `pubspec.yaml`:
-
-```yaml
-dependencies:
-  veloquent_sdk: ^1.1.0
-```
-
-Then run:
-
-```bash
-flutter pub get
-```
-
-Package on pub.dev: [pub.dev/packages/veloquent_sdk](https://pub.dev/packages/veloquent_sdk)
+[Installing](https://pub.dev/packages/veloquent_sdk/install)
 
 ## Getting started
 
