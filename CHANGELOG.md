@@ -32,3 +32,7 @@
 - Added `getFieldErrors(field)` and `getFirstFieldError(field)` to `SdkError` for easier validation error mapping.
 - Refactored exports in `veloquent_sdk.dart` for better indexing and autocompletion.
 - Removed unused `veloquent_sdk_base.dart` placeholder.
+
+## 1.2.1
+
+- Update readme
