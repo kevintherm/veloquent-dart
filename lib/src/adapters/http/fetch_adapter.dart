@@ -154,7 +154,10 @@ class FetchAdapter implements HttpAdapter {
       multipartRequest.fields[key] = value.toString();
     }
 
+    request.onPrepareMultipart?.call(multipartRequest);
+
     return sendMultipartRequest(
+
       method: request.method.toUpperCase(),
       uri: uri,
       multipartRequest: multipartRequest,

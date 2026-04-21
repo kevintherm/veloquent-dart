@@ -17,3 +17,18 @@
 ## 1.1.1
 
 - Update installation docs
+
+## 1.2.0
+
+- **Auth**: 
+    - Added synchronous `.user` and `.session` getters for immediate access to last-fetched data.
+    - Added `loadState()` to restore authentication state from persistence.
+    - FIXED: Changed `logout` method from `POST` to `DELETE` to match server requirements.
+- **Storage**:
+    - Added `SecureStorageAdapter` as a drop-in wrapper for `flutter_secure_storage`.
+    - Renamed `LocalStorageAdapter` to `SharedPreferencesAdapter` for clarity.
+    - Removed generic `AsyncStorageAdapter`.
+- Added `onPrepareMultipart` hook to `HttpRequest` to allow manual header injection (e.g. `Host` header for local development).
+- Added `getFieldErrors(field)` and `getFirstFieldError(field)` to `SdkError` for easier validation error mapping.
+- Refactored exports in `veloquent_sdk.dart` for better indexing and autocompletion.
+- Removed unused `veloquent_sdk_base.dart` placeholder.

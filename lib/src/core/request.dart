@@ -7,6 +7,8 @@ import 'config.dart';
 
 const String storageKeyToken = 'vp:token';
 const String storageKeyMeta = 'vp:auth_meta';
+const String storageKeyUser = 'vp:auth_user';
+
 
 String buildUrl(String baseUrl, String path, [Map<String, dynamic>? params]) {
   final baseUri = Uri.parse('$baseUrl$path');
@@ -64,12 +66,59 @@ class RequestHelper {
     if (storage.isAsync) {
       await storage.removeItemAsync(storageKeyToken);
       await storage.removeItemAsync(storageKeyMeta);
+      await storage.removeItemAsync(storageKeyUser);
       return;
     }
 
     storage.removeItem(storageKeyToken);
     storage.removeItem(storageKeyMeta);
+    storage.removeItem(storageKeyUser);
   }
+
+  Future<Map<String, dynamic>?> getAuthMeta() async {
+    final storage = config.storage;
+    final String? metaJson;
+    if (storage.isAsync) {
+      metaJson = await storage.getItemAsync(storageKeyMeta);
+    } else {
+      metaJson = storage.getItem(storageKeyMeta);
+    }
+
+    if (metaJson == null) return null;
+    try {
+      return Map<String, dynamic>.from(jsonDecode(metaJson));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getUser() async {
+    final storage = config.storage;
+    final String? userJson;
+    if (storage.isAsync) {
+      userJson = await storage.getItemAsync(storageKeyUser);
+    } else {
+      userJson = storage.getItem(storageKeyUser);
+    }
+
+    if (userJson == null) return null;
+    try {
+      return Map<String, dynamic>.from(jsonDecode(userJson));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> setUser(Map<String, dynamic> user) async {
+    final storage = config.storage;
+    final userJson = _encodeJson(user);
+    if (storage.isAsync) {
+      await storage.setItemAsync(storageKeyUser, userJson);
+      return;
+    }
+    storage.setItem(storageKeyUser, userJson);
+  }
+
 
   Future<RequestResult<dynamic>> execute({
     required String method,

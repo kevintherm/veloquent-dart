@@ -5,14 +5,21 @@ class HttpRequest {
     this.headers,
     this.body,
     this.timeout,
+    this.onPrepareMultipart,
   });
+
 
   final String url;
   final String method;
   final Map<String, String>? headers;
   final dynamic body;
   final Duration? timeout;
+
+  /// A callback that is invoked just before a multipart request is sent.
+  /// The argument is the underlying `http.MultipartRequest` (from `package:http`).
+  final void Function(dynamic request)? onPrepareMultipart;
 }
+
 
 class HttpResponse {
   const HttpResponse({

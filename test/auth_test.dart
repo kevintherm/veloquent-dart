@@ -50,10 +50,11 @@ void main() {
       expect(req?['method'], 'POST');
       expect(req?['url'], 'http://localhost:3000/api/collections/users/auth/login');
       expect(req?['body'], {
-        'email': 'test@example.com',
+        'identity': 'test@example.com',
         'password': 'password'
       });
     });
+
 
     test('impersonate stores the returned token', () async {
       httpAdapter.mockResponse(200, {
@@ -83,11 +84,14 @@ void main() {
       await sdk.auth.logout('users');
 
       expect(storageAdapter.getItem('vp:token'), isNull);
+      expect(sdk.auth.user, isNull);
+      expect(sdk.auth.session, isNull);
       
       final req = httpAdapter.lastRequest;
-      expect(req?['method'], 'POST');
+      expect(req?['method'], 'DELETE');
       expect(req?['url'], 'http://localhost:3000/api/collections/users/auth/logout');
     });
+
 
     test('me returns user data', () async {
       httpAdapter.mockResponse(200, {
@@ -112,5 +116,30 @@ void main() {
     test('isAuthenticated returns false when token missing', () async {
       expect(await sdk.auth.isAuthenticated(), isFalse);
     });
+
+    test('maintains synchronous user and session state', () async {
+      final mockUser = {'id': '1', 'email': 'test@example.com'};
+      final mockMeta = {
+        'expires_in': 3600,
+        'collection_name': 'users',
+        'issued_at': '2026-01-01T00:00:00Z'
+      };
+
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {
+          'token': 'sync-token',
+          'record': mockUser,
+          ...mockMeta,
+        }
+      });
+
+      await sdk.auth.login('users', 'test@example.com', 'password');
+
+      expect(sdk.auth.user, equals(mockUser));
+      expect(sdk.auth.session?['collection_name'], 'users');
+      expect(storageAdapter.getItem('vp:auth_user'), contains('test@example.com'));
+    });
   });
 }
+

@@ -5,6 +5,23 @@ class Auth {
 
   final RequestHelper requestHelper;
 
+  Map<String, dynamic>? _currentUser;
+  Map<String, dynamic>? _session;
+
+  /// Returns the currently authenticated user record, if any.
+  Map<String, dynamic>? get user => _currentUser;
+
+  /// Returns the current session metadata (token, collection, etc).
+  Map<String, dynamic>? get session => _session;
+
+  /// Loads the authenticated state from storage.
+  /// Should be called during SDK initialization.
+  Future<void> loadState() async {
+    _currentUser = await requestHelper.getUser();
+    _session = await requestHelper.getAuthMeta();
+  }
+
+
   Future<Map<String, dynamic>> login(
       String collection, String identity, String password) async {
     final result = await requestHelper.execute(
@@ -23,7 +40,15 @@ class Auth {
       };
 
       await requestHelper.setToken(token, meta);
+      _session = meta;
+
+      if (data.containsKey('record')) {
+        final record = Map<String, dynamic>.from(data['record']);
+        await requestHelper.setUser(record);
+        _currentUser = record;
+      }
     }
+
 
     return data;
   }
@@ -46,10 +71,18 @@ class Auth {
       };
 
       await requestHelper.setToken(token, meta);
+      _session = meta;
+
+      if (responseData.containsKey('record')) {
+        final record = Map<String, dynamic>.from(responseData['record']);
+        await requestHelper.setUser(record);
+        _currentUser = record;
+      }
     }
 
     return responseData;
   }
+
 
   Future<Map<String, dynamic>> impersonate(
       String collection, String recordId) async {
@@ -68,7 +101,15 @@ class Auth {
       };
 
       await requestHelper.setToken(token, meta);
+      _session = meta;
+
+      if (data.containsKey('record')) {
+        final record = Map<String, dynamic>.from(data['record']);
+        await requestHelper.setUser(record);
+        _currentUser = record;
+      }
     }
+
 
     return data;
   }
@@ -76,24 +117,29 @@ class Auth {
   Future<void> logout(String collection) async {
     try {
       await requestHelper.execute(
-        method: 'POST',
+        method: 'DELETE',
         path: '/collections/$collection/auth/logout',
       );
     } finally {
       await requestHelper.clearToken();
+      _currentUser = null;
+      _session = null;
     }
   }
 
   Future<void> logoutAll(String collection) async {
     try {
       await requestHelper.execute(
-        method: 'POST',
+        method: 'DELETE',
         path: '/collections/$collection/auth/logout-all',
       );
     } finally {
       await requestHelper.clearToken();
+      _currentUser = null;
+      _session = null;
     }
   }
+
 
   Future<dynamic> me([String? collection]) async {
     final path = collection != null ? '/collections/$collection/auth/me' : '/user';
@@ -103,8 +149,13 @@ class Auth {
       path: path,
     );
 
+    final userData = Map<String, dynamic>.from(result.data);
+    await requestHelper.setUser(userData);
+    _currentUser = userData;
+
     return result.data;
   }
+
 
   Future<bool> isAuthenticated() async {
     final token = await requestHelper.getToken();

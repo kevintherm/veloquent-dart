@@ -112,30 +112,8 @@ class MockStorageAdapter extends StorageAdapter {
   Future<void> setItemAsync(String key, String value) async => setItem(key, value);
 }
 
-class MockAsyncStorageBackend implements AsyncStorageBackend {
-  final Map<String, String?> data = {};
-
-  @override
-  Future<void> clear() async => data.clear();
-
-  @override
-  Future<String?> getItem(String key) async => data[key];
-
-  @override
-  Future<void> removeItem(String key) async => data.remove(key);
-
-  @override
-  Future<void> setItem(String key, String value) async => data[key] = value;
-}
-
-class MockAsyncStorageAdapter extends AsyncStorageAdapter {
-  @override
-  bool get isAsync => true;
-
-  MockAsyncStorageAdapter() : super(MockAsyncStorageBackend());
-}
-
 class MockRealtimeChannel implements RealtimeChannel {
+
   final Map<String, List<Function(dynamic)>> eventListeners = {};
 
   @override

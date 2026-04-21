@@ -2,8 +2,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'types.dart';
 
-class LocalStorageAdapter implements StorageAdapter {
-  LocalStorageAdapter(this._preferences);
+class SharedPreferencesAdapter implements StorageAdapter {
+  SharedPreferencesAdapter(this._preferences);
 
   final SharedPreferences _preferences;
 
@@ -43,9 +43,11 @@ class LocalStorageAdapter implements StorageAdapter {
   Future<void> setItemAsync(String key, String value) async => setItem(key, value);
 }
 
-Future<LocalStorageAdapter> createLocalStorageAdapter({
+Future<SharedPreferencesAdapter> createSharedPreferencesAdapter({
   SharedPreferences? preferences,
 }) async {
-  final resolvedPreferences = preferences ?? await SharedPreferences.getInstance();
-  return LocalStorageAdapter(resolvedPreferences);
+  final resolvedPreferences =
+      preferences ?? await SharedPreferences.getInstance();
+  return SharedPreferencesAdapter(resolvedPreferences);
 }
+
