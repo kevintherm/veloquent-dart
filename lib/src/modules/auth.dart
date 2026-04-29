@@ -1,4 +1,5 @@
 import '../core/request.dart';
+import '../adapters/oauth/types.dart';
 
 class Auth {
   Auth(this.requestHelper);
@@ -156,6 +157,56 @@ class Auth {
     return result.data;
   }
 
+
+  Future<String> getOAuthRedirectUrl(String collection, String provider) async {
+    final result = await requestHelper.execute(
+      method: 'POST',
+      path: '/oauth2/redirect',
+      body: {'collection': collection, 'provider': provider},
+    );
+    final data = Map<String, dynamic>.from(result.data);
+    return data['redirect_url'].toString();
+  }
+
+  Future<Map<String, dynamic>> exchangeOAuthCode(String code) async {
+    final result = await requestHelper.execute(
+      method: 'POST',
+      path: '/oauth2/exchange',
+      body: {'code': code},
+    );
+    return _doExchange(Map<String, dynamic>.from(result.data));
+  }
+
+  Future<Map<String, dynamic>> loginWithOAuth(
+    String collection,
+    String provider,
+    OAuthLauncher launcher,
+  ) async {
+    final url = await getOAuthRedirectUrl(collection, provider);
+    final code = await launcher(url);
+    return exchangeOAuthCode(code);
+  }
+
+  Future<Map<String, dynamic>> _doExchange(Map<String, dynamic> data) async {
+    final token = data['token']?.toString();
+    if (token != null) {
+      final meta = <String, dynamic>{
+        'expires_in': data['expires_in'],
+        'collection_name': data['collection_name'],
+        'issued_at': DateTime.now().toIso8601String(),
+      };
+
+      await requestHelper.setToken(token, meta);
+      _session = meta;
+
+      if (data.containsKey('record')) {
+        final record = Map<String, dynamic>.from(data['record']);
+        await requestHelper.setUser(record);
+        _currentUser = record;
+      }
+    }
+    return data;
+  }
 
   Future<bool> isAuthenticated() async {
     final token = await requestHelper.getToken();

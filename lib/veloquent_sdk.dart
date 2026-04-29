@@ -7,6 +7,7 @@ export 'src/adapters/storage/types.dart';
 export 'src/adapters/storage/shared_preferences_adapter.dart';
 export 'src/adapters/storage/secure_storage_adapter.dart';
 export 'src/adapters/realtime/types.dart';
+export 'src/adapters/oauth/types.dart';
 
 export 'src/adapters/realtime/pusher_channels_adapter.dart';
 export 'src/models/record.dart';

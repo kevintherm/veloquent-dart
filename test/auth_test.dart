@@ -140,6 +140,73 @@ void main() {
       expect(sdk.auth.session?['collection_name'], 'users');
       expect(storageAdapter.getItem('vp:auth_user'), contains('test@example.com'));
     });
+
+    test('getOAuthRedirectUrl hits /api/oauth2/redirect', () async {
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {'redirect_url': 'http://localhost/oauth/redirect'}
+      });
+
+      final url = await sdk.auth.getOAuthRedirectUrl('users', 'google');
+
+      expect(url, 'http://localhost/oauth/redirect');
+      final req = httpAdapter.lastRequest;
+      expect(req?['method'], 'POST');
+      expect(req?['url'], 'http://localhost:3000/api/oauth2/redirect');
+      expect(req?['body'], {'collection': 'users', 'provider': 'google'});
+    });
+
+    test('exchangeOAuthCode hits /api/oauth2/exchange and stores session', () async {
+      final mockUser = {'id': 'user-123', 'email': 'oauth@example.com'};
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {
+          'token': 'oauth-token',
+          'expires_in': 3600,
+          'collection_name': 'users',
+          'record': mockUser
+        }
+      });
+
+      final result = await sdk.auth.exchangeOAuthCode('some-code');
+
+      expect(result['token'], 'oauth-token');
+      expect(sdk.auth.user, equals(mockUser));
+      expect(storageAdapter.getItem('vp:token'), 'oauth-token');
+
+      final req = httpAdapter.lastRequest;
+      expect(req?['method'], 'POST');
+      expect(req?['url'], 'http://localhost:3000/api/oauth2/exchange');
+      expect(req?['body'], {'code': 'some-code'});
+    });
+
+    test('loginWithOAuth coordinates with launcher adapter', () async {
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {'redirect_url': 'http://localhost/oauth'}
+      });
+
+      // Second response for the code exchange
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {
+          'token': 'oauth-token',
+          'expires_in': 3600,
+          'collection_name': 'users',
+          'record': {'email': 'oauth@example.com'}
+        }
+      });
+
+      Future<String> mockLauncher(String url) async {
+        expect(url, 'http://localhost/oauth');
+        return 'extracted-code';
+      }
+
+      final result = await sdk.auth.loginWithOAuth('users', 'google', mockLauncher);
+
+      expect(result['token'], 'oauth-token');
+      expect(sdk.auth.user?['email'], 'oauth@example.com');
+    });
   });
 }
 

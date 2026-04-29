@@ -36,3 +36,9 @@
 ## 1.2.1
 
 - Update readme
+
+## 1.3.0
+
+- **Auth**: 
+    - Add OAuth2 authentication support
+    
