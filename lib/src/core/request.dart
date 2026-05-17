@@ -176,6 +176,7 @@ class RequestHelper {
 
     String message = 'Unknown error';
     dynamic details = data;
+    String? apiCode;
 
     if (data is Map) {
       final map = Map<String, dynamic>.from(data);
@@ -183,23 +184,28 @@ class RequestHelper {
           ? map['message'].toString()
           : (map['error']?.toString() ?? message);
       details = map['errors'] ?? map;
+      apiCode = map['code']?.toString() ?? map['error_type']?.toString();
     }
 
     var code = 'HTTP_ERROR';
-    if (status == 400) {
-      code = 'BAD_REQUEST';
-    } else if (status == 401) {
-      code = 'UNAUTHORIZED';
-    } else if (status == 403) {
-      code = 'FORBIDDEN';
-    } else if (status == 404) {
-      code = 'NOT_FOUND';
-    } else if (status == 409) {
-      code = 'CONFLICT';
-    } else if (status == 422) {
-      code = 'VALIDATION_ERROR';
-    } else if (status >= 500) {
-      code = 'SERVER_ERROR';
+    if (apiCode != null && apiCode.isNotEmpty) {
+      code = apiCode;
+    } else {
+      if (status == 400) {
+        code = 'BAD_REQUEST';
+      } else if (status == 401) {
+        code = 'UNAUTHORIZED';
+      } else if (status == 403) {
+        code = 'FORBIDDEN';
+      } else if (status == 404) {
+        code = 'NOT_FOUND';
+      } else if (status == 409) {
+        code = 'CONFLICT';
+      } else if (status == 422) {
+        code = 'VALIDATION_ERROR';
+      } else if (status >= 500) {
+        code = 'SERVER_ERROR';
+      }
     }
 
     return SdkError(code, message, statusCode: status, details: details);

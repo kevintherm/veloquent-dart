@@ -42,3 +42,7 @@
 - **Auth**: 
     - Add OAuth2 authentication support
     
+## 1.3.1
+
+- **Utility**:
+    - Error getters now follow the new server error responses

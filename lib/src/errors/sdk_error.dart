@@ -31,7 +31,11 @@ class SdkError implements Exception {
   /// Returns a list of error messages for a specific field if available.
   List<String> getFieldErrors(String field) {
     if (details is Map) {
-      final errors = details[field];
+      final mapDetails = details as Map;
+      final source = (mapDetails['errors'] is Map)
+          ? mapDetails['errors'] as Map
+          : mapDetails;
+      final errors = source[field];
       if (errors is List) {
         return errors.map((e) => e.toString()).toList();
       }
