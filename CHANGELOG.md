@@ -46,3 +46,10 @@
 
 - **Utility**:
     - Error getters now follow the new server error responses
+
+## 1.4.0
+
+- **AI Chat Module**:
+    - Added the `Ai` module supporting normal chat (`chat()`) and streaming chat (`chatStream()`) requests.
+    - Implemented streaming SSE (Server-Sent Events) via a new `requestStream()` byte-streaming method in `HttpAdapter` and `FetchAdapter`.
+    - Enforced that the `collection` parameter is required for all AI chat methods, emphasizing that agent collections are user-defined.
