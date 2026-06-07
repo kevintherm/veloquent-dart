@@ -93,6 +93,30 @@ void main() {
         rethrow;
       }
     }, skip: !runIntegration ? 'Set RUN_INTEGRATION_TESTS=true to run' : null);
+
+    test('Integration: Should execute AI chat request', () async {
+      final result = await sdk.ai.chat(
+        agent: 'agent',
+        prompt: '1+1=',
+        collection: 'agents',
+      );
+      expect(result.data.text, contains('2'));
+    }, skip: !runIntegration ? 'Set RUN_INTEGRATION_TESTS=true to run' : null);
+
+    test('Integration: Should stream AI chat request', () async {
+      final stream = sdk.ai.chatStream(
+        agent: 'agent',
+        prompt: '1+1=',
+        collection: 'agents',
+      );
+      var result = '';
+      await for (final event in stream) {
+        if (event.type == 'text_delta' && event.delta != null) {
+          result += event.delta!;
+        }
+      }
+      expect(result, contains('2'));
+    }, skip: !runIntegration ? 'Set RUN_INTEGRATION_TESTS=true to run' : null);
   });
 }
 

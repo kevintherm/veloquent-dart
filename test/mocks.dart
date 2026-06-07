@@ -78,6 +78,27 @@ class MockHttpAdapter extends FetchAdapter {
     return _nextResponse();
   }
 
+  Stream<List<int>>? _mockStream;
+
+  void mockStreamResponse(Stream<List<int>> stream) {
+    _mockStream = stream;
+  }
+
+  @override
+  Stream<List<int>> requestStream(HttpRequest request) {
+    requests.add({
+      'method': request.method,
+      'url': request.url,
+      'headers': request.headers,
+      'body': request.body,
+      'isStream': true,
+    });
+    if (_mockStream != null) {
+      return _mockStream!;
+    }
+    return Stream.value(utf8.encode('data: {"type":"text-delta","delta":"mocked stream chunk"}\n\n'));
+  }
+
   Map<String, dynamic>? get lastRequest => requests.isNotEmpty ? requests.last : null;
 }
 

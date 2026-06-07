@@ -14,3 +14,4 @@ export 'src/models/record.dart';
 export 'src/models/records_list_result.dart';
 export 'src/models/request_result.dart';
 export 'src/models/file_upload.dart';
+export 'src/modules/ai.dart';

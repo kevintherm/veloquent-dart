@@ -37,4 +37,8 @@ class HttpResponse {
 
 abstract class HttpAdapter {
   Future<HttpResponse> request(HttpRequest request);
+
+  Stream<List<int>> requestStream(HttpRequest request) {
+    throw UnimplementedError('Streaming is not supported by this HttpAdapter.');
+  }
 }

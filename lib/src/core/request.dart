@@ -170,6 +170,41 @@ class RequestHelper {
     }
   }
 
+  Stream<List<int>> executeStream({
+    required String method,
+    required String path,
+    dynamic body,
+    Map<String, dynamic>? query,
+  }) async* {
+    final url = buildUrl('${config.apiUrl}/api', path, query);
+    final headers = <String, String>{};
+
+    final token = await getToken();
+    if (token != null && token.trim().isNotEmpty) {
+      headers['authorization'] = 'Bearer $token';
+    }
+
+    try {
+      final stream = config.http.requestStream(
+        HttpRequest(
+          url: url,
+          method: method,
+          body: body,
+          headers: headers,
+          timeout: config.timeout,
+        ),
+      );
+      yield* stream;
+    } on HttpResponse catch (response) {
+      throw errorFromResponse(response);
+    } catch (error) {
+      if (error is SdkError) {
+        rethrow;
+      }
+      throw SdkError('REQUEST_FAILED', _errorMessage(error), cause: error);
+    }
+  }
+
   SdkError errorFromResponse(HttpResponse response) {
     final status = response.status;
     final data = response.data;

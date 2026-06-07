@@ -7,6 +7,7 @@ import '../modules/onboarding.dart';
 import '../modules/realtime.dart';
 import '../modules/records.dart';
 import '../modules/schema.dart';
+import '../modules/ai.dart';
 import 'config.dart';
 import 'request.dart';
 
@@ -37,6 +38,7 @@ class Veloquent {
     schema = Schema(requestHelper);
     onboarding = Onboarding(requestHelper);
     realtime = Realtime(requestHelper, config.realtime);
+    ai = Ai(requestHelper);
   }
 
   final VeloquentConfig config;
@@ -48,4 +50,5 @@ class Veloquent {
   late final Schema schema;
   late final Onboarding onboarding;
   late final Realtime realtime;
+  late final Ai ai;
 }

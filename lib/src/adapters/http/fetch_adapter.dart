@@ -36,6 +36,92 @@ class FetchAdapter implements HttpAdapter {
     return _requestJson(request, headers);
   }
 
+  @override
+  Stream<List<int>> requestStream(HttpRequest request) async* {
+    final headers = <String, String>{...?(request.headers)};
+    final uri = Uri.parse(request.url);
+
+    final http.BaseRequest req;
+
+    if (_hasFileUploads(request.body)) {
+      final multipartRequest = http.MultipartRequest(request.method.toUpperCase(), uri);
+      multipartRequest.headers.addAll(headers);
+
+      final body = request.body as Map;
+      for (final entry in body.entries) {
+        final key = entry.key.toString();
+        final value = entry.value;
+
+        if (value == null) continue;
+
+        if (value is FileUpload) {
+          multipartRequest.files.add(
+            http.MultipartFile.fromBytes(
+              key,
+              value.bytes,
+              filename: value.filename,
+              contentType: _parseMediaType(value.mimeType),
+            ),
+          );
+          continue;
+        }
+
+        if (value is List) {
+          for (final item in value) {
+            if (item is FileUpload) {
+              multipartRequest.files.add(
+                http.MultipartFile.fromBytes(
+                  key,
+                  item.bytes,
+                  filename: item.filename,
+                  contentType: _parseMediaType(item.mimeType),
+                ),
+              );
+            } else {
+              multipartRequest.fields[key] = item is Map || item is List
+                  ? jsonEncode(item)
+                  : item.toString();
+            }
+          }
+          continue;
+        }
+
+        if (value is Map || value is List) {
+          multipartRequest.fields[key] = jsonEncode(value);
+          continue;
+        }
+
+        multipartRequest.fields[key] = value.toString();
+      }
+
+      request.onPrepareMultipart?.call(multipartRequest);
+      req = multipartRequest;
+    } else {
+      final standardRequest = http.Request(request.method.toUpperCase(), uri);
+      standardRequest.headers.addAll(headers);
+
+      if (request.body != null) {
+        if (request.body is String) {
+          standardRequest.body = request.body as String;
+        } else {
+          standardRequest.body = jsonEncode(request.body);
+        }
+        headers.putIfAbsent('content-type', () => 'application/json');
+        standardRequest.headers.addAll(headers);
+      }
+      req = standardRequest;
+    }
+
+    final streamedResponse = await _client.send(req).timeout(request.timeout ?? timeout);
+
+    if (streamedResponse.statusCode >= 400) {
+      final response = await http.Response.fromStream(streamedResponse);
+      throw _parseResponse(response);
+    }
+
+    yield* streamedResponse.stream;
+  }
+
   /// Standard JSON request path.
   Future<HttpResponse> _requestJson(HttpRequest request, Map<String, String> headers) async {
     Object? encodedBody;
