@@ -222,5 +222,76 @@ void main() {
       // No FileUploads — must send as plain JSON
       expect(req?['isMultipart'], isNot(isTrue));
     });
+
+    test('automatically serializes DateTime to UTC on request and deserializes to local on response', () async {
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {
+          'id': 'rec-123',
+          'title': 'Dart DateTime Test',
+          'published_at': '2026-06-11T16:45:00.000Z', // UTC ISO-8601
+          'event_date': '2026-06-11', // Date field type (unaffected)
+          'created_at': '2026-06-11 16:45:00Z' // standard space datetime (still parsed)
+        }
+      });
+
+      final localTime = DateTime.parse('2026-06-11T23:45:00+07:00'); // 16:45:00 UTC
+      final result = await sdk.records.create('posts', {
+        'title': 'Dart DateTime Test',
+        'published_at': localTime,
+        'event_date': '2026-06-11'
+      });
+
+      // 1. Verify Request: DateTime converted to UTC string
+      final req = httpAdapter.lastRequest;
+      expect(req?['body']?['published_at'], '2026-06-11T16:45:00.000Z');
+      expect(req?['body']?['event_date'], '2026-06-11'); // date field remains string
+
+      // 2. Verify Response: datetime fields parsed to local DateTime objects, date field remains string
+      final publishedAt = result.get('published_at');
+      expect(publishedAt, isA<DateTime>());
+      expect((publishedAt as DateTime).isUtc, isFalse); // parsed back to local
+      expect(publishedAt.toUtc().toIso8601String(), '2026-06-11T16:45:00.000Z');
+
+      final createdAt = result.get('created_at');
+      expect(createdAt, isA<DateTime>());
+      expect((createdAt as DateTime).isUtc, isFalse); // parsed back to local
+      expect(createdAt.toUtc().toIso8601String(), '2026-06-11T16:45:00.000Z');
+
+      expect(result.get('event_date'), '2026-06-11');
+    });
+
+    test('does not corrupt or mutate binary byte lists (List<int>)', () async {
+      httpAdapter.mockResponse(201, {
+        'message': 'Created',
+        'data': {'id': 'rec-123'}
+      });
+
+      final binaryData = <int>[1, 2, 3, 4];
+      await sdk.records.create('posts', {
+        'binary': binaryData,
+      });
+
+      final req = httpAdapter.lastRequest;
+      expect(req?['body']?['binary'], isA<List<int>>());
+      expect(req?['body']?['binary'], binaryData);
+    });
+
+    test('correctly parses timezone-less datetime strings as UTC', () async {
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {
+          'id': 'rec-123',
+          'created_at': '2026-06-11 16:45:00', // UTC datetime without timezone suffix
+        }
+      });
+
+      final result = await sdk.records.get('posts', 'rec-123');
+      final createdAt = result.get('created_at');
+      
+      expect(createdAt, isA<DateTime>());
+      expect((createdAt as DateTime).isUtc, isFalse); // parsed back to local client time
+      expect(createdAt.toUtc().toIso8601String(), '2026-06-11T16:45:00.000Z');
+    });
   });
 }

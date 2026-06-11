@@ -184,12 +184,14 @@ class RequestHelper {
     headers['X-Device-ID'] = deviceId;
     headers['User-Agent'] = config.userAgent ?? _getDefaultUserAgent();
 
+    final serializedBody = serializeDates(body);
+
     try {
       final response = await config.http.request(
         HttpRequest(
           url: url,
           method: method,
-          body: body,
+          body: serializedBody,
           headers: headers,
           timeout: config.timeout,
         ),
@@ -204,7 +206,7 @@ class RequestHelper {
         final map = Map<String, dynamic>.from(responseData);
         if (map.containsKey('data')) {
           return RequestResult<dynamic>(
-            data: map['data'],
+            data: parseDates(map['data']),
             meta: map['meta'] is Map
                 ? Map<String, dynamic>.from(map['meta'])
                 : null,
@@ -213,7 +215,7 @@ class RequestHelper {
         }
       }
 
-      return RequestResult<dynamic>(data: responseData);
+      return RequestResult<dynamic>(data: parseDates(responseData));
     } catch (error) {
       if (error is SdkError) {
         rethrow;
@@ -241,12 +243,14 @@ class RequestHelper {
 
     headers['User-Agent'] = config.userAgent ?? _getDefaultUserAgent();
 
+    final serializedBody = serializeDates(body);
+
     try {
       final stream = config.http.requestStream(
         HttpRequest(
           url: url,
           method: method,
-          body: body,
+          body: serializedBody,
           headers: headers,
           timeout: config.timeout,
         ),
@@ -317,4 +321,55 @@ String _errorMessage(Object error) {
     return message.substring('Exception: '.length);
   }
   return message;
+}
+
+dynamic serializeDates(dynamic obj) {
+  if (obj == null) return null;
+  if (obj is DateTime) {
+    return obj.toUtc().toIso8601String();
+  }
+  if (obj is List<int>) {
+    return obj;
+  }
+  if (obj is List) {
+    return obj.map((e) => serializeDates(e)).toList();
+  }
+  if (obj is Map) {
+    return Map<String, dynamic>.fromEntries(
+      obj.entries.map(
+        (entry) => MapEntry(entry.key.toString(), serializeDates(entry.value)),
+      ),
+    );
+  }
+  return obj;
+}
+
+dynamic parseDates(dynamic obj) {
+  if (obj == null) return null;
+  if (obj is String) {
+    final regExp = RegExp(r'^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}');
+    if (regExp.hasMatch(obj)) {
+      var normalized = obj;
+      if (!RegExp(r'[Zz]$').hasMatch(normalized) &&
+          !RegExp(r'[+-]\d{2}(:?\d{2})?$').hasMatch(normalized)) {
+        normalized = '${normalized.replaceAll(' ', 'T')}Z';
+      }
+      final parsed = DateTime.tryParse(normalized);
+      if (parsed != null) {
+        return parsed.toLocal();
+      }
+    }
+    return obj;
+  }
+  if (obj is List) {
+    return obj.map((e) => parseDates(e)).toList();
+  }
+  if (obj is Map) {
+    return Map<String, dynamic>.fromEntries(
+      obj.entries.map(
+        (entry) => MapEntry(entry.key.toString(), parseDates(entry.value)),
+      ),
+    );
+  }
+  return obj;
 }
