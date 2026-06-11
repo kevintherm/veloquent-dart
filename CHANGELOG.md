@@ -59,6 +59,15 @@
 - **New Login Alert**:
     - Attached device id and user agent if available on requests for Veloquent to detect new login from different source.
 
+## 1.6.0
+
+- **Offline Support**:
+    - Implemented a plug-and-play `OfflineAdapter` that wraps any `HttpAdapter`.
+    - Automatically queues `POST`, `PATCH`, and `DELETE` requests during network failures.
+    - Replays queued requests in FIFO order when connectivity is restored.
+    - Exposes callbacks `onQueued`, `onFlushed`, and `onFlushError` for custom event handling.
+    - Automatically refreshes the auth token from storage during replay.
+
 ## 1.5.1
 
 - **Fix**:

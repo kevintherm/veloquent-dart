@@ -3,6 +3,7 @@ export 'src/core/config.dart';
 export 'src/errors/sdk_error.dart';
 export 'src/adapters/http/types.dart';
 export 'src/adapters/http/fetch_adapter.dart';
+export 'src/adapters/http/offline_adapter.dart';
 export 'src/adapters/storage/types.dart';
 export 'src/adapters/storage/shared_preferences_adapter.dart';
 export 'src/adapters/storage/secure_storage_adapter.dart';
