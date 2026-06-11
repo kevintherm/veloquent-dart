@@ -19,6 +19,8 @@ class Veloquent {
     RealtimeAdapter? realtime,
     Duration timeout = VeloquentConfig.defaultTimeout,
     int retryAttempts = VeloquentConfig.defaultRetryAttempts,
+    String? deviceId,
+    String? userAgent,
   }) : this.fromConfig(
           VeloquentConfig.validate(
             apiUrl: apiUrl,
@@ -27,6 +29,8 @@ class Veloquent {
             realtime: realtime,
             timeout: timeout,
             retryAttempts: retryAttempts,
+            deviceId: deviceId,
+            userAgent: userAgent,
           ),
         );
 

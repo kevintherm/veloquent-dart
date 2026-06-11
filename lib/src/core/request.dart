@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 
 import '../adapters/http/types.dart';
 import '../errors/sdk_error.dart';
@@ -8,7 +10,7 @@ import 'config.dart';
 const String storageKeyToken = 'vp:token';
 const String storageKeyMeta = 'vp:auth_meta';
 const String storageKeyUser = 'vp:auth_user';
-
+const String storageKeyDeviceId = 'vp:device_id';
 
 String buildUrl(String baseUrl, String path, [Map<String, dynamic>? params]) {
   final baseUri = Uri.parse('$baseUrl$path');
@@ -119,6 +121,50 @@ class RequestHelper {
     storage.setItem(storageKeyUser, userJson);
   }
 
+  Future<String> getDeviceId() async {
+    if (config.deviceId != null && config.deviceId!.isNotEmpty) {
+      return config.deviceId!;
+    }
+
+    final storage = config.storage;
+    String? deviceId;
+    if (storage.isAsync) {
+      deviceId = await storage.getItemAsync(storageKeyDeviceId);
+    } else {
+      deviceId = storage.getItem(storageKeyDeviceId);
+    }
+
+    if (deviceId == null || deviceId.isEmpty) {
+      deviceId = _generateUuid();
+      if (storage.isAsync) {
+        await storage.setItemAsync(storageKeyDeviceId, deviceId);
+      } else {
+        storage.setItem(storageKeyDeviceId, deviceId);
+      }
+    }
+
+    return deviceId;
+  }
+
+  String _generateUuid() {
+    final random = math.Random();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.split('').map((c) {
+      if (c == 'x') {
+        final r = random.nextInt(16);
+        return r.toRadixString(16);
+      } else if (c == 'y') {
+        final r = random.nextInt(16) & 0x3 | 0x8;
+        return r.toRadixString(16);
+      } else {
+        return c;
+      }
+    }).join();
+  }
+
+  String _getDefaultUserAgent() {
+    final platformName = kIsWeb ? 'Web' : defaultTargetPlatform.name;
+    return 'Veloquent Dart SDK/1.4.0 ($platformName)';
+  }
 
   Future<RequestResult<dynamic>> execute({
     required String method,
@@ -133,6 +179,10 @@ class RequestHelper {
     if (token != null && token.trim().isNotEmpty) {
       headers['authorization'] = 'Bearer $token';
     }
+
+    final deviceId = await getDeviceId();
+    headers['X-Device-ID'] = deviceId;
+    headers['User-Agent'] = config.userAgent ?? _getDefaultUserAgent();
 
     try {
       final response = await config.http.request(
@@ -155,7 +205,9 @@ class RequestHelper {
         if (map.containsKey('data')) {
           return RequestResult<dynamic>(
             data: map['data'],
-            meta: map['meta'] is Map ? Map<String, dynamic>.from(map['meta']) : null,
+            meta: map['meta'] is Map
+                ? Map<String, dynamic>.from(map['meta'])
+                : null,
             message: map['message']?.toString(),
           );
         }
@@ -183,6 +235,11 @@ class RequestHelper {
     if (token != null && token.trim().isNotEmpty) {
       headers['authorization'] = 'Bearer $token';
     }
+
+    final deviceId = await getDeviceId();
+    headers['X-Device-ID'] = deviceId;
+
+    headers['User-Agent'] = config.userAgent ?? _getDefaultUserAgent();
 
     try {
       final stream = config.http.requestStream(

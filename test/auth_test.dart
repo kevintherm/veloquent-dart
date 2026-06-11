@@ -207,6 +207,105 @@ void main() {
       expect(result['token'], 'oauth-token');
       expect(sdk.auth.user?['email'], 'oauth@example.com');
     });
+
+    test('passes deviceId in X-Device-ID header when configured', () async {
+      final customSdk = Veloquent(
+        apiUrl: 'http://localhost:3000',
+        http: httpAdapter,
+        storage: storageAdapter,
+        deviceId: 'custom-dart-device-123',
+      );
+
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {
+          'token': 'mock-token',
+          'expires_in': 3600,
+          'collection_name': 'users'
+        }
+      });
+
+      await customSdk.auth.login('users', 'test@example.com', 'password');
+
+      final req = httpAdapter.lastRequest;
+      expect(req?['headers']?['X-Device-ID'], 'custom-dart-device-123');
+    });
+
+    test('passes custom userAgent in User-Agent header when configured', () async {
+      final customSdk = Veloquent(
+        apiUrl: 'http://localhost:3000',
+        http: httpAdapter,
+        storage: storageAdapter,
+        userAgent: 'MyCustomDartUA/1.0',
+      );
+
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {
+          'token': 'mock-token',
+          'expires_in': 3600,
+          'collection_name': 'users'
+        }
+      });
+
+      await customSdk.auth.login('users', 'test@example.com', 'password');
+
+      final req = httpAdapter.lastRequest;
+      expect(req?['headers']?['User-Agent'], 'MyCustomDartUA/1.0');
+    });
+
+    test('auto-generates and persists deviceId when not configured', () async {
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {
+          'token': 'mock-token',
+          'expires_in': 3600,
+          'collection_name': 'users'
+        }
+      });
+
+      await sdk.auth.login('users', 'test@example.com', 'password');
+
+      final req1 = httpAdapter.lastRequest;
+      final deviceId1 = req1?['headers']?['X-Device-ID'] as String?;
+      expect(deviceId1, isNotNull);
+      expect(deviceId1!.length, greaterThan(10));
+
+      // Verify it was stored
+      expect(storageAdapter.getItem('vp:device_id'), deviceId1);
+
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {
+          'token': 'mock-token',
+          'expires_in': 3600,
+          'collection_name': 'users'
+        }
+      });
+
+      // Second login request
+      await sdk.auth.login('users', 'test@example.com', 'password');
+
+      final req2 = httpAdapter.lastRequest;
+      final deviceId2 = req2?['headers']?['X-Device-ID'];
+      expect(deviceId2, deviceId1);
+    });
+
+    test('provides default User-Agent identifying the Veloquent SDK', () async {
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {
+          'token': 'mock-token',
+          'expires_in': 3600,
+          'collection_name': 'users'
+        }
+      });
+
+      await sdk.auth.login('users', 'test@example.com', 'password');
+
+      final req = httpAdapter.lastRequest;
+      expect(req?['headers']?['User-Agent'], contains('Veloquent Dart SDK/1.4.0'));
+    });
   });
 }
 

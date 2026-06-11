@@ -10,6 +10,8 @@ class VeloquentConfig {
     this.realtime,
     this.timeout = defaultTimeout,
     this.retryAttempts = defaultRetryAttempts,
+    this.deviceId,
+    this.userAgent,
   });
 
   static const Duration defaultTimeout = Duration(milliseconds: 30000);
@@ -21,6 +23,8 @@ class VeloquentConfig {
   final RealtimeAdapter? realtime;
   final Duration timeout;
   final int retryAttempts;
+  final String? deviceId;
+  final String? userAgent;
 
   static VeloquentConfig validate({
     required String apiUrl,
@@ -29,6 +33,8 @@ class VeloquentConfig {
     RealtimeAdapter? realtime,
     Duration? timeout,
     int? retryAttempts,
+    String? deviceId,
+    String? userAgent,
   }) {
     final normalizedApiUrl = apiUrl.trim();
     if (normalizedApiUrl.isEmpty) {
@@ -48,6 +54,8 @@ class VeloquentConfig {
       realtime: realtime,
       timeout: timeout ?? defaultTimeout,
       retryAttempts: retryAttempts ?? defaultRetryAttempts,
+      deviceId: deviceId,
+      userAgent: userAgent,
     );
   }
 }

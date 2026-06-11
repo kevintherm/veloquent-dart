@@ -53,3 +53,8 @@
     - Added the `Ai` module supporting normal chat (`chat()`) and streaming chat (`chatStream()`) requests.
     - Implemented streaming SSE (Server-Sent Events) via a new `requestStream()` byte-streaming method in `HttpAdapter` and `FetchAdapter`.
     - Enforced that the `collection` parameter is required for all AI chat methods, emphasizing that agent collections are user-defined.
+
+## 1.5.0
+
+- **New Login Alert**:
+    - Attached device id and user agent if available on requests for Veloquent to detect new login from different source.
