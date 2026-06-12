@@ -59,6 +59,11 @@
 - **New Login Alert**:
     - Attached device id and user agent if available on requests for Veloquent to detect new login from different source.
 
+## 1.7.1
+
+- **Fix**:
+    - Resolve issue where optimistic cache updates fail for wrapped response formats (e.g. nested under `data` or `items`).
+
 ## 1.7.0
 
 - **Caching Adapter**:

@@ -259,12 +259,28 @@ class CachingAdapter extends HttpAdapter {
           var cacheUpdated = false;
           var cacheData = cached['data'];
 
-          // 1. Updating a List Cache (e.g. GET /api/collections/{collection}/records)
-          if (cacheData is Map && cacheData.containsKey('items') && cacheData['items'] is List) {
-            var items = List<Map<String, dynamic>>.from(
-              (cacheData['items'] as List).map((e) => Map<String, dynamic>.from(e as Map)),
-            );
+          List<Map<String, dynamic>>? items;
+          String? listKey;
 
+          if (cacheData is List) {
+            items = List<Map<String, dynamic>>.from(
+              cacheData.map((e) => Map<String, dynamic>.from(e as Map)),
+            );
+          } else if (cacheData is Map) {
+            if (cacheData['data'] is List) {
+              listKey = 'data';
+              items = List<Map<String, dynamic>>.from(
+                (cacheData['data'] as List).map((e) => Map<String, dynamic>.from(e as Map)),
+              );
+            } else if (cacheData['items'] is List) {
+              listKey = 'items';
+              items = List<Map<String, dynamic>>.from(
+                (cacheData['items'] as List).map((e) => Map<String, dynamic>.from(e as Map)),
+              );
+            }
+          }
+
+          if (items != null) {
             if (method == 'POST' && queueId != null) {
               final newRecord = {
                 ...reqBody!,
@@ -287,28 +303,43 @@ class CachingAdapter extends HttpAdapter {
             }
 
             if (cacheUpdated) {
-              cacheData = Map<String, dynamic>.from(cacheData);
-              cacheData['items'] = items;
-            }
-          }
-          // 2. Updating a Detail Cache (e.g. GET /api/collections/{collection}/records/{id})
-          else if (cacheData is Map && cacheData['id'] == recordId) {
-            if (method == 'PATCH') {
-              cacheData = {
-                ...Map<String, dynamic>.from(cacheData),
-                ...reqBody!,
-                '_queued': true,
-              };
-              cacheUpdated = true;
-            } else if (method == 'DELETE') {
-              if (storage.isAsync) {
-                await storage.removeItemAsync(key);
+              if (listKey != null) {
+                cacheData = Map<String, dynamic>.from(cacheData as Map);
+                cacheData[listKey] = items;
               } else {
-                storage.removeItem(key);
+                cacheData = items;
               }
-              final updatedRegistry = (await _loadRegistry()).where((k) => k != key).toList();
-              await _saveRegistry(updatedRegistry);
-              continue;
+            }
+          } else if (cacheData is Map) {
+            final isWrapped = cacheData.containsKey('data') && cacheData['data'] is Map;
+            final recordMap = isWrapped
+                ? Map<String, dynamic>.from(cacheData['data'] as Map)
+                : Map<String, dynamic>.from(cacheData);
+
+            if (recordMap['id'] == recordId) {
+              if (method == 'PATCH') {
+                final updatedRecord = {
+                  ...recordMap,
+                  ...reqBody!,
+                  '_queued': true,
+                };
+                if (isWrapped) {
+                  cacheData = Map<String, dynamic>.from(cacheData as Map);
+                  cacheData['data'] = updatedRecord;
+                } else {
+                  cacheData = updatedRecord;
+                }
+                cacheUpdated = true;
+              } else if (method == 'DELETE') {
+                if (storage.isAsync) {
+                  await storage.removeItemAsync(key);
+                } else {
+                  storage.removeItem(key);
+                }
+                final updatedRegistry = (await _loadRegistry()).where((k) => k != key).toList();
+                await _saveRegistry(updatedRegistry);
+                continue;
+              }
             }
           }
 
