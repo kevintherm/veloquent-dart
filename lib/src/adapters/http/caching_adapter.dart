@@ -106,8 +106,8 @@ class CachingAdapter extends HttpAdapter {
   }
 
   @override
-  Stream<List<int>> requestStream(HttpRequest req) {
-    return inner.requestStream(req);
+  Stream<List<int>> requestStream(HttpRequest request) {
+    return inner.requestStream(request);
   }
 
   // -------------------------------------------------------------------------
@@ -324,7 +324,7 @@ class CachingAdapter extends HttpAdapter {
                   '_queued': true,
                 };
                 if (isWrapped) {
-                  cacheData = Map<String, dynamic>.from(cacheData as Map);
+                  cacheData = Map<String, dynamic>.from(cacheData);
                   cacheData['data'] = updatedRecord;
                 } else {
                   cacheData = updatedRecord;
