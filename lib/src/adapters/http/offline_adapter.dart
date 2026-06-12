@@ -166,6 +166,13 @@ class OfflineAdapter extends HttpAdapter {
     }
 
     try {
+      final queue = await _loadQueue();
+      if (queue.isNotEmpty) {
+        await flush();
+      }
+    } catch (_) {}
+
+    try {
       return await inner.request(req);
     } catch (error) {
       if (isMutation && _isNetworkError(error)) {

@@ -185,6 +185,34 @@ void main() {
       } catch (_) {}
       expect(await adapter.queueSize, equals(0));
     });
+
+    test('GET automatically attempts to flush queue first if queue is not empty', () async {
+      final storage = MemoryStorage();
+
+      final adapter1 = OfflineAdapter(NetworkFailAdapter(), storage, flushInterval: Duration.zero);
+      await adapter1.request(HttpRequest(
+        method: 'POST',
+        url: 'https://api.example.com/api/collections/posts/records',
+        body: const {'title': 'A'},
+      ));
+      expect(await adapter1.queueSize, equals(1));
+
+      final success = SuccessAdapter(const {
+        'data': <String, dynamic>{}
+      });
+      final adapter2 = OfflineAdapter(success, storage, flushInterval: Duration.zero);
+
+      final res = await adapter2.request(HttpRequest(
+        method: 'GET',
+        url: 'https://api.example.com/api/collections/posts/records',
+      ));
+
+      expect(res.status, equals(200));
+      expect(await adapter2.queueSize, equals(0));
+      expect(success.calls, hasLength(2));
+      expect(success.calls[0].method, equals('POST'));
+      expect(success.calls[1].method, equals('GET'));
+    });
   });
 
   // -------------------------------------------------------------------------

@@ -90,3 +90,8 @@
 
 - **Fix**:
     - Standardize DateTime serialization/deserialization for locally stored states (user records and auth metadata) to avoid `jsonEncode` crashes.
+
+## 1.7.2
+
+- **Optimization**:
+    - Trigger immediate `flush()` of offline mutation queue on new HTTP requests if the queue is non-empty, reducing the data staleness window upon network recovery.
