@@ -88,7 +88,8 @@ class RequestHelper {
 
     if (metaJson == null) return null;
     try {
-      return Map<String, dynamic>.from(jsonDecode(metaJson));
+      final decoded = jsonDecode(metaJson);
+      return Map<String, dynamic>.from(parseDates(decoded));
     } catch (_) {
       return null;
     }
@@ -105,7 +106,8 @@ class RequestHelper {
 
     if (userJson == null) return null;
     try {
-      return Map<String, dynamic>.from(jsonDecode(userJson));
+      final decoded = jsonDecode(userJson);
+      return Map<String, dynamic>.from(parseDates(decoded));
     } catch (_) {
       return null;
     }
@@ -163,7 +165,7 @@ class RequestHelper {
 
   String _getDefaultUserAgent() {
     final platformName = kIsWeb ? 'Web' : defaultTargetPlatform.name;
-    return 'Veloquent Dart SDK/1.4.0 ($platformName)';
+    return 'Veloquent Dart SDK/1.6.1 ($platformName)';
   }
 
   Future<RequestResult<dynamic>> execute({
@@ -309,7 +311,7 @@ class RequestHelper {
 }
 
 String _encodeJson(Map<String, dynamic> value) {
-  return jsonEncode(value);
+  return jsonEncode(serializeDates(value));
 }
 
 String _errorMessage(Object error) {

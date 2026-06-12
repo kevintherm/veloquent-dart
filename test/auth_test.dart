@@ -141,6 +141,37 @@ void main() {
       expect(storageAdapter.getItem('vp:auth_user'), contains('test@example.com'));
     });
 
+    test('saves and loads user state containing DateTime without throwing', () async {
+      final now = DateTime.now().toUtc();
+      final mockUser = {
+        'id': '1',
+        'email': 'test@example.com',
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      };
+      
+      httpAdapter.mockResponse(200, {
+        'message': 'OK',
+        'data': {
+          'token': 'sync-token',
+          'expires_in': 3600,
+          'collection_name': 'users',
+          'record': mockUser,
+        }
+      });
+
+      // 1. Login should parse DateTime fields, and save user state containing DateTime objects
+      await sdk.auth.login('users', 'test@example.com', 'password');
+
+      expect(sdk.auth.user?['created_at'], isA<DateTime>());
+      expect(sdk.auth.user?['updated_at'], isA<DateTime>());
+
+      // 2. Load state from storage should successfully decode and parse back to DateTime
+      await sdk.auth.loadState();
+      expect(sdk.auth.user?['created_at'], isA<DateTime>());
+      expect((sdk.auth.user?['created_at'] as DateTime).toUtc().toIso8601String(), now.toIso8601String());
+    });
+
     test('getOAuthRedirectUrl hits /api/oauth2/redirect', () async {
       httpAdapter.mockResponse(200, {
         'message': 'OK',
@@ -304,7 +335,7 @@ void main() {
       await sdk.auth.login('users', 'test@example.com', 'password');
 
       final req = httpAdapter.lastRequest;
-      expect(req?['headers']?['User-Agent'], contains('Veloquent Dart SDK/1.4.0'));
+      expect(req?['headers']?['User-Agent'], contains('Veloquent Dart SDK/1.6.1'));
     });
   });
 }

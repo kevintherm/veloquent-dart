@@ -72,3 +72,8 @@
 
 - **Fix**:
     - Resolve date/datetime serialization issues and enforce UTC timezone parsing for timezone-less datetime strings.
+
+## 1.6.1
+
+- **Fix**:
+    - Standardize DateTime serialization/deserialization for locally stored states (user records and auth metadata) to avoid `jsonEncode` crashes.
