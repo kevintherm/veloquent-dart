@@ -59,6 +59,14 @@
 - **New Login Alert**:
     - Attached device id and user agent if available on requests for Veloquent to detect new login from different source.
 
+## 1.7.0
+
+- **Caching Adapter**:
+    - Implemented `CachingAdapter` to cache `GET` responses with customizable TTL.
+    - Added offline fallback read support from cache on network errors.
+    - Added optimistic cache updates for `POST`, `PATCH`, and `DELETE` requests that return synthetic 202 status codes.
+    - Added cache invalidation registry to automatically clear collection caches when online mutations succeed.
+
 ## 1.6.0
 
 - **Offline Support**:
