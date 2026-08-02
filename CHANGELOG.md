@@ -1,3 +1,8 @@
+## 1.7.3
+
+- **Dependencies**:
+    - Upgraded `flutter_secure_storage` to `^10.3.1`.
+
 ## 1.0.0
 
 - Initial version.
